@@ -12,12 +12,15 @@ from gimpfu import *
 # 5. copy and rename 8x8_n.dds for #2
 
 print_messages = True
-output_dir = "c:/Oblivion.output/data/textures/"
+#outputRoot = "C:/"
+outputRoot = os.environ["HOME"] + "/"
+output_dir = outputRoot + "Oblivion.output/data/textures/"
+error_filename = outputRoot + "Oblivion.output/gimp_log.txt"
 
 def debug_output(message):
     if (print_messages == True):
         gimp.message(message)
-    with open("C:/Oblivion.output/gimp_log.txt", "a") as error_file:
+    with open(error_filename, "a") as error_file:
         error_file.write(message + "\n")
 
 def run():

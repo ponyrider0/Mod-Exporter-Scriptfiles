@@ -46,8 +46,8 @@ echo.
 pause
 
 :loop
-rem echo "%PYTHONEXE%" start_modexporter_blender.py "%BLENDEREXE%"
-"%PYTHONEXE%" start_modexporter_blender.py "%BLENDEREXE%"
+rem echo "%PYTHONEXE%" modexporter_blender_main.py "%BLENDEREXE%"
+"%PYTHONEXE%" modexporter_blender_main.py "%BLENDEREXE%"
 set count=0
 for %%x in (%outputdir%/*.job) do set /a count+=1
 set locks=0
