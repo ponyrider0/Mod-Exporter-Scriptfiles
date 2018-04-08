@@ -11,15 +11,22 @@ import sys
 import logging
 
 import os.path
+
+sys.path.append(os.environ["HOME"])
+
 #from pyffi.formats.nif import NifFormat
 #from pyffi.spells.nif.check import SpellCompareSkinData
 #from pyffi.spells.nif import NifToaster
+from nif_common_con import NifConfig
+#from nif_common_con import NifFormat
 from import_nif_con import NifImport
 from export_nif_con import NifExport
-from nif_common_con import NifConfig
-from nif_common_con import NifFormat
 
 import pyffi.utils.quickhull
+
+#outputRoot = "C:/"
+outputRoot = os.environ["HOME"] + "/"
+error_filename = outputRoot + "Oblivion.output/error_list.txt"
 
 class Timeout(threading.Thread):
     def cancel(self):
@@ -41,8 +48,13 @@ class Timeout(threading.Thread):
             return
 
 def error_list(err_string):
-    with open("C:/Oblivion.output/error_list.txt", "a") as error_file:
+    try:
+        error_file = open(error_filename, "a")
         error_file.write(err_string + "\n")
+    except:
+        print "ERROR writing to error file! last message: " + str(err_string)
+        raw_input("PRESS ENTER TO CONTINUE")
+
 
 def filter_collision_children(collision_ob):
     # identify all children
@@ -146,7 +158,7 @@ except KeyboardInterrupt:
     raw_input("Keyboard interrupt detected, will skip current operation: import[" + in_file + "]. Press Enter to continue with next file.")
     #return
     Blender.Quit()
-except RuntimeError as e:
+except RuntimeError, e:
     # delete all objects and move on to next input
     print "RuntimeError: unable to import: [" + in_file + "], message: [" + str(e) + "], skipping..."
     error_list(in_file + " (NifImport - Runtime error): " + str(e) )
@@ -280,7 +292,7 @@ if ("_far.nif" in in_file):
                 bpy.data.scenes.active.objects.unlink(ob)
             gc.collect()
             continue
-        except RuntimeError as e:
+        except RuntimeError, e:
             # delete all objects and move on to next input
             print "poly_reduce: RuntimeError exception: [" + in_file + "], message: [" + str(e) + "], skipping..."
             for ob in bpy.data.objects:
@@ -330,7 +342,7 @@ if (collision_selection == []) and ("_far.nif" not in in_file):
                     raw_input("Keyboard interrupt detected, will skip current operation: qhull[" + in_file + "]. Press Enter to skip qhull.")
                 qhull_failed = True
                 break
-            except RuntimeError as e:
+            except RuntimeError, e:
                 print "qhull: RuntimeError exception: " + in_file + "], message: [" + str(e) + "], skipping..."
                 error_list.append(in_file + " (qhull - RuntimeError): " + str(e) )
                 #raw_input("Press Enter to continue.")
@@ -358,7 +370,7 @@ if (collision_selection == []) and ("_far.nif" not in in_file):
                 continue
             try:
                 collision_ob = bpy.data.scenes.active.objects.new(collision_mesh)
-            except Exception as e:
+            except Exception, e:
                 print in_file + " (Error during collision mesh generation): " + str(e) + ", attempting to continue..."
                 error_list(in_file + " (Error during collision mesh generation): " + str(e) + ", attempting to continue...")
                 continue
@@ -411,7 +423,7 @@ except AttributeError, e:
     error_list(in_file + " (NifExport - AttributeError): " + str(e))
     print "NifExport: AttributeError exception: " + in_file + "], error: [" + str(e) + "], skipping..."
     #raw_input("Press enter to continue")
-except RuntimeError as e:
+except RuntimeError, e:
     error_list(in_file + " (NifExport - RuntimeError): " + str(e))
     print "NifExport: RuntimeError exception: " + in_file + "], message: [" + str(e) + "], skipping..."
     #raw_input("Press enter to continue")
