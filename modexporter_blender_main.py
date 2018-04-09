@@ -199,7 +199,7 @@ def main():
     # get next job
     while (num_jobs > 0) and (num_locks < num_jobs):
         try:
-            print "DEBUG: counting... jobs left = " + str(num_jobs) + ", locks = " + str(num_locks)
+            #print "DEBUG: counting... jobs left = " + str(num_jobs) + ", locks = " + str(num_locks)
             count_jobs_and_locks()
             if (process_next_job() == -1):
                 print "==========================================="
