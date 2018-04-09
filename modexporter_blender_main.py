@@ -15,7 +15,7 @@ if (os.environ.get("MODEXPORTER_OUTPUTROOT") is not None):
     outputRoot = os.environ["MODEXPORTER_OUTPUTROOT"] + "/"
 else:
     outputRoot = "C:/"
-print "DEBUG: outputRoot = " + outputRoot + ", blenderPath = " + blenderPath
+#print "DEBUG: outputRoot = " + outputRoot + ", blenderPath = " + blenderPath
 error_filename = outputRoot + "Oblivion.output/error_list.txt"
 output_path = outputRoot + "Oblivion.output/Data/Meshes/"
 outlist_path = outputRoot + "Oblivion.output/jobs/"
@@ -54,12 +54,12 @@ def select_job_file():
         for line in outlist_file: 
             # remove eol char
             filename = output_path + line.rstrip("\r\n")
-            print "DEBUG: looking for: " + filename + "..."
+            #print "DEBUG: looking for: " + filename + "..."
             if (os.path.exists(filename) == False) or ("morro\\e\\" in filename) or ("morro/e/" in filename):
-                print "DEBUG: file not found, skipping."
+                #print "DEBUG: file not found, skipping."
                 continue
             else:
-                print "DEBUG: file found, adding to queue for processing."
+                #print "DEBUG: file found, adding to queue for processing."
                 input_files.append(filename)
         outlist_file.close()
         if (input_files == []):
