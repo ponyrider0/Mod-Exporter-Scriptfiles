@@ -53,12 +53,19 @@ def select_job_file():
         print "Job file selected: " + jobname
         for line in outlist_file: 
             # remove eol char
-            filename = output_path + line[:len(line)-1]
+            filename = output_path + line.rstrip("\r\n")
+            print "DEBUG: looking for: " + filename + "..."
             if (os.path.exists(filename) == False) or ("morro\\e\\" in filename) or ("morro/e/" in filename):
+                print "DEBUG: file not found, skipping."
                 continue
             else:
+                print "DEBUG: file found, adding to queue for processing."
                 input_files.append(filename)
         outlist_file.close()
+        if (input_files == []):
+            print ""
+            print "WARNING: no valid files were found in jobfile:\n" + jobname + "\n"
+            raw_input("Press CTRL+C to quit or ENTER to continue with next file.\n")
     else:
         print "No jobs found. DEBUG: search was for: " + outlist_path + "*.job"
         return -1
@@ -205,7 +212,7 @@ def main():
                 quit()
         except KeyboardInterrupt:
             try:
-                raw_input("Conversion interrupted by user. Press CTRL+C again to quit or ENTER to continue with next file.\n")
+                raw_input("\nConversion interrupted by user. Press CTRL+C again to quit or ENTER to continue with next file.\n")
             except KeyboardInterrupt:
                 quit()
     print_jobs_complete_quit()
