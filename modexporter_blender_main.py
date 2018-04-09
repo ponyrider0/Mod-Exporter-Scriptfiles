@@ -63,9 +63,8 @@ def select_job_file():
                 input_files.append(filename)
         outlist_file.close()
         if (input_files == []):
-            print ""
-            print "WARNING: no valid files were found in jobfile:\n" + jobname + "\n"
-            raw_input("Press CTRL+C to quit or ENTER to continue with next file.\n")
+            print "WARNING: no valid files were found in jobfile:\n" + jobname
+            #raw_input("DEBUG: Press CTRL+C to quit or ENTER to continue with next file.\n")
     else:
         print "No jobs found. DEBUG: search was for: " + outlist_path + "*.job"
         return -1
