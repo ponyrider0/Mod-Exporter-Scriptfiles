@@ -11,6 +11,12 @@ if (os.environ.get("BLENDEREXE") is not None):
     blenderPath = os.environ["BLENDEREXE"]
 else:
     blenderPath = "C:/Program Files (x86)/Blender Foundation/Blender/blender.exe"
+if os.path.exists(blenderPath) == False:
+	print "==================="
+	print "ERROR: Blender was not found. Please set the BLENDEREXE variable to the path of your blender executable."
+	print "==================="
+	raw_input("Press ENTER to quit.")
+	quit(-1)
 if (os.environ.get("MODEXPORTER_OUTPUTROOT") is not None):
     outputRoot = os.environ["MODEXPORTER_OUTPUTROOT"] + "/"
 else:
