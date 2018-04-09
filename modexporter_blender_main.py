@@ -60,6 +60,7 @@ def select_job_file():
                 input_files.append(filename)
         outlist_file.close()
     else:
+        print "No jobs found. DEBUG: search was for: " + outlist_path + "*.job"
         return -1
 
 def perform_job():
@@ -91,7 +92,7 @@ def perform_job():
                 print "Unable to launch blender, logging error and skipping file..."
                 # log error and continue
                 error_list(in_file + " (launch error) could not start blender.")
-                #continue
+                return -1
 
             
 def complete_job():
@@ -109,14 +110,17 @@ def complete_job():
     print ""
     print "job completed: " + jobname
 
-def get_next_job():
+def process_next_job():
     global jobname
     global input_files
     input_files = []
     jobname = ""
     if (select_job_file() == -1):
         return -1
-    perform_job()
+    if (perform_job() == -1):
+        print "DEBUG: error occured while processing job. Please see Oblivion.output\error_list.txt for more information."
+        raw_input("Press ENTER to try to continue with next file or CTRL+C to quit.")
+        return -1
     complete_job()
 
 def count_jobs_and_locks():
@@ -146,7 +150,7 @@ def issue_lock_warning():
     print ""
     print "--------------------------------"
     try:
-        raw_input("Press CTRL+C to quit or ENTER to continue.")
+        raw_input("Press CTRL+C to quit or ENTER to continue.\n")
     except KeyboardInterrupt:
         quit()
 
@@ -190,10 +194,18 @@ def main():
         try:
             print "DEBUG: counting... jobs left = " + str(num_jobs) + ", locks = " + str(num_locks)
             count_jobs_and_locks()
-            get_next_job()
+            if (process_next_job() == -1):
+                print "==========================================="
+                print ""
+                print "ERROR: "
+                print "An error occured while processing jobs. Make sure your have full file permissions to Oblivion.output and Oblivion.output\jobs folders."
+                print ""
+                print "==========================================="
+                raw_input("Press ENTER to quit.\n")
+                quit()
         except KeyboardInterrupt:
             try:
-                raw_input("Conversion interrupted by user. Press CTRL+C again to quit or ENTER to continue with next file.")
+                raw_input("Conversion interrupted by user. Press CTRL+C again to quit or ENTER to continue with next file.\n")
             except KeyboardInterrupt:
                 quit()
     print_jobs_complete_quit()
