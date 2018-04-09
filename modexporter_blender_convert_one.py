@@ -12,7 +12,8 @@ import logging
 
 import os.path
 
-sys.path.append(os.environ["HOME"])
+if (os.environ.get("HOME") is not None):
+    sys.path.append(os.environ["HOME"])
 
 #from pyffi.formats.nif import NifFormat
 #from pyffi.spells.nif.check import SpellCompareSkinData
@@ -24,8 +25,10 @@ from export_nif_con import NifExport
 
 import pyffi.utils.quickhull
 
-#outputRoot = "C:/"
-outputRoot = os.environ["HOME"] + "/"
+if (os.environ.get("MODEXPORTER_OUTPUTROOT") is not None):
+    outputRoot = os.environ["MODEXPORTER_OUTPUTROOT"] + "/"
+else:
+    outputRoot = "C:/"
 error_filename = outputRoot + "Oblivion.output/error_list.txt"
 
 class Timeout(threading.Thread):

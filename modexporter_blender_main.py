@@ -7,16 +7,15 @@ import glob
 from os import listdir
 from os.path import isfile, join
 
-if (os.environ["BLENDEREXE"] != ""):
+if (os.environ.get("BLENDEREXE") is not None):
     blenderPath = os.environ["BLENDEREXE"]
 else:
     blenderPath = "C:/Program Files (x86)/Blender Foundation/Blender/blender.exe"
-    #blenderPath = "/Applications/blender-2.49b/blender.app/Contents/MacOS/blender"
-if (os.environ["MODEXPORTER_OUTPUTROOT"] != ""):
-    outputRoot = os.environ["MODEXPORTER_OUTPUTROOT"]
+if (os.environ.get("MODEXPORTER_OUTPUTROOT") is not None):
+    outputRoot = os.environ["MODEXPORTER_OUTPUTROOT"] + "/"
 else:
     outputRoot = "C:/"
-    #outputRoot = os.environ["HOME"] + "/"
+print "DEBUG: outputRoot = " + outputRoot + ", blenderPath = " + blenderPath
 error_filename = outputRoot + "Oblivion.output/error_list.txt"
 output_path = outputRoot + "Oblivion.output/Data/Meshes/"
 outlist_path = outputRoot + "Oblivion.output/jobs/"
@@ -79,7 +78,7 @@ def perform_job():
         print "==================="
         print "starting blender..." + in_file
         print "==================="
-        #raw_input("PRESS ENTER TO BEGIN")
+        #raw_input("DEBUG: PRESS ENTER TO BEGIN")
         if ("_far.nif" in in_file):
             rc = subprocess.call([blenderPath, blenderFilename, "-p", "0", "0", "1", "1", "-P", conversion_script, "--", in_file,"--fullres_collisions", str(int(fullres_collisions))])
         else:
@@ -93,10 +92,7 @@ def perform_job():
                 # log error and continue
                 error_list(in_file + " (launch error) could not start blender.")
                 #continue
-    ##        else:
-    ##            print "successful launch on second attempt."
-    ##    else:
-    ##            print "successful launch on first attempt."
+
             
 def complete_job():
     global jobname
@@ -191,8 +187,15 @@ def main():
         print_jobs_complete_quit()
     # get next job
     while (num_jobs > 0) and (num_locks < num_jobs):
-        count_jobs_and_locks()
-        get_next_job()
+        try:
+            print "DEBUG: counting... jobs left = " + str(num_jobs) + ", locks = " + str(num_locks)
+            count_jobs_and_locks()
+            get_next_job()
+        except KeyboardInterrupt:
+            try:
+                raw_input("Conversion interrupted by user. Press CTRL+C again to quit or ENTER to continue with next file.")
+            except KeyboardInterrupt:
+                quit()
     print_jobs_complete_quit()
 
 
