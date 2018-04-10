@@ -128,7 +128,7 @@ def process_next_job():
     input_files = []
     jobname = ""
     if (select_job_file() == -1):
-        return -1
+        return 0
     if (perform_job() == -1):
         print "DEBUG: error occured while processing job. Please see Oblivion.output\error_list.txt for more information."
         raw_input("Press ENTER to try to continue with next file or CTRL+C to quit.")

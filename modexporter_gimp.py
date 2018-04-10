@@ -12,8 +12,10 @@ from gimpfu import *
 # 5. copy and rename 8x8_n.dds for #2
 
 print_messages = True
-#outputRoot = "C:/"
-outputRoot = os.environ["HOME"] + "/"
+if (os.environ.get("MODEXPORTER_OUTPUTROOT") is not None):
+    outputRoot = os.environ["MODEXPORTER_OUTPUTROOT"] + "/"
+else:
+    outputRoot = "C:/"
 output_dir = outputRoot + "Oblivion.output/data/textures/"
 error_filename = outputRoot + "Oblivion.output/gimp_log.txt"
 
