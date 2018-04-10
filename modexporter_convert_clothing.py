@@ -2,11 +2,30 @@ import Blender
 import bpy
 import sys
 import gc
+
+if (os.environ.get("HOME") is not None):
+    sys.path.append(os.environ["HOME"])
+
 #import Mathutils
 from import_nif_con import NifImport
 from export_nif_con import NifExport
 from nif_common_con import NifConfig
 from nif_common_con import NifFormat
+
+if (os.environ.get("MODEXPORTER_OUTPUTROOT") is not None):
+    outputRoot = os.environ["MODEXPORTER_OUTPUTROOT"] + "/"
+else:
+    outputRoot = "C:/"
+error_filename = outputRoot + "Oblivion.output/error_list.txt"
+
+def error_list(err_string):
+    try:
+        error_file = open(error_filename, "a")
+        error_file.write(err_string + "\n")
+    except:
+        print "ERROR writing to error file! last message: " + str(err_string)
+        raw_input("PRESS ENTER TO CONTINUE")
+
 
 argv = sys.argv
 argv = argv[argv.index("--") + 1:]
@@ -25,6 +44,7 @@ altskeleton = False
 try:
         arm = bpy.data.armatures["Bip01"]
 except KeyError, e:
+        error_list(in_file + "(Clothing conversion) Error trying to read armature[Bip01].")
         print "ERROR reading armature[Bip01]. Niffile:[" + in_file + "] may already be converted. Quiting..."
         Blender.Quit()
 bone = arm.bones["Bip01 Pelvis"]
