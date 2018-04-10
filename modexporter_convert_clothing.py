@@ -2,6 +2,7 @@ import Blender
 import bpy
 import sys
 import gc
+import os
 
 if (os.environ.get("HOME") is not None):
     sys.path.append(os.environ["HOME"])
