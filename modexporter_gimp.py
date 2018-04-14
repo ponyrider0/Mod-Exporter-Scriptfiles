@@ -57,8 +57,17 @@ def fake_normalmap_file(filedir, filename):
         return
 
 
-def fix_mgso_normalmaps(image, filedir, new_filename):
+def fix_mgso_normalmaps(filedir, new_filename):
     global mgso_specular_fix
+    # first, load existing mgso normal map
+    try:
+        image = pdb.gimp_file_load(filedir+new_filename, new_filename)
+    except:
+        try:
+            image = pdb.file_tga_load(filedir+new_filename, new_filename)
+        except:
+            debug_output("ERROR trying to load: " + filedir+new_filename + ", skipping...")
+            return
     # select all
     pdb.gimp_selection_all(image)
     # cut selection
@@ -99,7 +108,7 @@ def make_normalmap_file(image, filedir, filename):
     new_filename = filename[:len(filename)-4] + "_n.dds"
     # check if normal map exists, return
     if os.path.exists(filedir + new_filename):
-        fix_mgso_normalmaps(image, filedir, new_filename)
+        fix_mgso_normalmaps(filedir, new_filename)
         return
     # use normalmaps plugin
     #debug_output("DEBUG: running normalmap() plugin...")

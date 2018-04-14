@@ -60,7 +60,6 @@ def error_list(err_string):
 
 
 def filter_collision_children(collision_ob):
-    global ob_selection
     # identify all children
     for ob_child in bpy.data.scenes.active.objects:
         if (ob_child.getParent() == collision_ob):
@@ -70,9 +69,10 @@ def filter_collision_children(collision_ob):
                 ob_selection.remove(ob_child)
                 #print "Removing " + ob_child.name + " from ob_selection..."
             # modify attributes for collision export
-            ob_child.setDrawType(Blender.Object.DrawTypes['BOUNDBOX'])
-            ob_child.setDrawMode(Blender.Object.DrawModes['WIRE'])
-            ob_child.rbShapeBoundType = Blender.Object.RBShapes['POLYHEDERON']
+            #ob_child.name = "collision_bad"
+            ob_child.setDrawType(1)
+            ob_child.setDrawMode(32)
+            ob_child.rbShapeBoundType = 4
             #ob_child.select(True)
             if (ob_child not in collision_selection):
                 collision_selection.append(ob_child)
@@ -134,24 +134,32 @@ def poly_reduce(ob, reduction = 0.5):
                 #Window.RedrawAll()
     print 'Reduction done in %.6f sec.' % (Blender.sys.time()-t)
 
-
-
 #=================== start script =========================
 #logging.basicConfig(stream=sys.stdout,level=logging.DEBUG)
+Blender.Set("texturesdir", outputRoot + "Oblivion.output/Data/Textures/")
 argv = sys.argv
 #print "full argumentlist: " + str(argv)
 argv = argv[argv.index("--") + 1:]
 #print "Processed arguments: " + str(argv)
-in_file = argv[0]
+out_file = argv[0]
+# Assuming "/data/meshes" in path, redirect to /Temp/Meshes
+in_file = out_file.lower().replace("/data/meshes/", "/temp/meshes/")
+if os.path.exists(in_file) == False:
+    print "Input file not found! skipping file..."
+    Blender.Quit()
+if os.path.exists(out_file) == True:
+    print "Output file already exists, skipping file..."
+    Blender.Quit()
 fullres_collisions = False
 if ("--fullres_collisions" in argv):
     fullres_collisions = bool(int(argv[argv.index("--fullres_collisions") + 1]))
+fullres_collisions = False
+if ("--reduction_scale" in argv):
+    reduction_scale = int(argv[argv.index("--reduction_scale") + 1])
+else:
+    reduction_scale = 0.75
 
 #start import
-if (os.path.exists(in_file) == False):
-    raw_input("File not found! Press Enter to quit.")
-    Blender.Quit()
-
 config = dict(**NifConfig.DEFAULTS)
 config["IMPORT_FILE"] = in_file
 print "----------"
@@ -222,7 +230,6 @@ config["ALPHA_PROP_THRESHOLD"] = nifimport.ALPHA_PROP_THRESHOLD
 #    raw_input("ALPHA_PROP_FLAGS=" + str(config["ALPHA_PROP_FLAGS"]) + ", ALPHA_PROP_THRESHOLD=" + str(config["ALPHA_PROP_THRESHOLD"]) + ". Press ENTER to continue...")
 
 
-
 #process objects, select meshes, ID/generate collision meshes
 print "----------"
 print "Selecting objects for export..."
@@ -237,16 +244,21 @@ for ob in bpy.data.scenes.active.objects:
             #noname material crashfix
             if ("noname" in mat.name.lower()):
                 mat.name = mat.name.lower().replace("noname", "material")
-    # look for drawtype = boundbox for collision
-    if ("collision" in ob.name.lower()) or (ob.getDrawType() == Blender.Object.DrawTypes['BOUNDBOX']):
-        #track collision objects to separate all their children from ob_selection list
-        print "Collision mesh found: " + ob.name
-        collision_selection.append(ob)
-        #ob.select(True)
+    if (True):
+        # look for drawtype = shaded or textured
+        if ("collision" in ob.name.lower()) or (ob.getDrawType() == 1):
+            #track collision objects to separate all their children from ob_selection list
+            print "Collision mesh found: " + ob.name
+            collision_selection.append(ob)
+            #ob.select(True)
+        elif (ob.getDrawType() == 4) and ("collision" not in ob.name.lower()):
+            print "Selecting mesh for export: " + ob.name
+            ob_selection.append(ob)
+            #ob.select(True)
+        else:
+            print "skipping: " + ob.name
     else:
-        print "Selecting mesh for export: " + ob.name
-        ob_selection.append(ob)
-        #ob.select(True)
+        print "skipping: " + ob.name
 # selection step 2: filter collision_selection out of ob_selection
 if (collision_selection != []):
     print "----------"
@@ -278,7 +290,7 @@ if ("_far.nif" in in_file):
             global_timeout = False
             timeout = Timeout(10)
             timeout.start()
-            poly_reduce(ob, 0.5)
+            poly_reduce(ob, reduction_scale)
             timeout.cancel()
         except KeyboardInterrupt:
             if (timeout.Failed == True):
@@ -313,7 +325,6 @@ if ("_far.nif" in in_file):
             error_list(in_file + " (poly_reduce - unhandled exception): " + unknown_error)
             #raw_input("Press Enter to continue.")
             continue
-
 
 
 #collision geometry generation
@@ -377,18 +388,25 @@ if (collision_selection == []) and ("_far.nif" not in in_file):
                 continue
             collision_ob.setMatrix(ob.getMatrix())
             collision_ob.setName("collision")
-            collision_ob.setDrawType(Blender.Object.DrawTypes['BOUNDBOX'])
-            collision_ob.setDrawMode(Blender.Object.DrawModes['WIRE'])
-            collision_ob.rbShapeBoundType = Blender.Object.RBShapes['POLYHEDERON']
+            collision_ob.setDrawType(1)
+            collision_ob.setDrawMode(32)
+            collision_ob.rbShapeBoundType = 4
             #collision_ob.select(True)
             collision_selection.append(collision_ob)
     print "collision generation complete."
 
 
+folderPath = os.path.dirname(out_file)
+try:
+    if os.path.exists(folderPath) == False:
+        os.makedirs(folderPath)
+except:
+    print "Export ERROR: could not create destination directory: " + folderPath
+    error_list(in_file + "Export ERROR: could not create destination directory: " + folderPath)
+    Blender.Quit()
 
 #start export
 config["EXPORT_VERSION"] = 'Oblivion'
-out_file = in_file
 config["EXPORT_FILE"] = out_file
 print "----------"
 if ("_far.nif" not in in_file):
@@ -398,21 +416,20 @@ else:
     print "DEBUG: cleaning ob_selection..."
     #raw_input("Press ENTER to continue:")
     for ob in ob_selection:
-        if (ob.getDrawType() == Blender.Object.DrawTypes['BOUNDBOX']) or (ob.getDrawMode() == Blender.Object.DrawModes['WIRE']):
+        if (ob.getDrawType() == 1) or (ob.getDrawMode() == 32):
             print "DEBUG: collision found hiding in ob_selection! [" + ob.name + "]"
             #raw_input("Press ENTER to continue.")
             ob_selection.remove(ob)
             bpy.data.scenes.active.objects.unlink(ob)
+            del ob
     for collision_ob in collision_selection:
         print "Unlinking collision object: " + collision_ob.name
-        # prevent export_nif from recognizing as collision object
-        collision_ob.setDrawType(Blender.Object.DrawTypes['SOLID'])
         collision_selection.remove(collision_ob)
         bpy.data.scenes.active.objects.unlink(collision_ob)
+        del collision_ob
+    gc.collect()
     print "Exporting without collisions: " + out_file
     config["EXPORT_OBJECTS"] = ob_selection
-
-
 
 #print "DEBUG: ob_selection contains: " + str(ob_selection)
 #raw_input("Press ENTER to continue.")

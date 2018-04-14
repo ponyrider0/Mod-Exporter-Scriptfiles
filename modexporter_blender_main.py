@@ -23,6 +23,7 @@ else:
     outputRoot = "C:/"
 #print "DEBUG: outputRoot = " + outputRoot + ", blenderPath = " + blenderPath
 error_filename = outputRoot + "Oblivion.output/error_list.txt"
+input_path = outputRoot + "Oblivion.output/temp/Meshes/"
 output_path = outputRoot + "Oblivion.output/Data/Meshes/"
 outlist_path = outputRoot + "Oblivion.output/jobs/"
 blenderFilename = "empty.blend"
@@ -59,14 +60,17 @@ def select_job_file():
         print "Job file selected: " + jobname
         for line in outlist_file: 
             # remove eol char
-            filename = output_path + line.rstrip("\r\n")
+            in_filename = input_path + line.rstrip("\r\n")
+            out_filename = output_path + line.rstrip("\r\n")
             #print "DEBUG: looking for: " + filename + "..."
-            if (os.path.exists(filename) == False) or ("morro\\e\\" in filename) or ("morro/e/" in filename):
+            if (os.path.exists(in_filename) == False) or ("morro/e/" in in_filename):
                 #print "DEBUG: file not found, skipping."
                 continue
+            elif (os.path.exists(out_filename) == True):
+                continue
             else:
-                #print "DEBUG: file found, adding to queue for processing."
-                input_files.append(filename)
+                #print "DEBUG: input file found, adding to queue for processing."
+                input_files.append(out_filename)
         outlist_file.close()
         if (input_files == []):
             print "WARNING: no valid files were found in jobfile:\n" + jobname
@@ -80,8 +84,6 @@ def perform_job():
     global input_files
     global fullres_collisions
     global blenderPath
-    #arguments = sys.argv
-    #blenderpath = arguments[len(arguments)-1]
     for in_file in input_files:
         if ("_clothing_" in jobname) and ("ugnd.nif" not in in_file.lower()):
             conversion_script = "modexporter_convert_clothing.py"

@@ -2341,6 +2341,19 @@ class NifExport(NifImportExport):
                         #glossmtex = mesh_gloss_mtex,
                         #darkmtex = mesh_dark_mtex,
                         #detailmtex = mesh_detail_mtex)) 
+                elif self.EXPORT_VERSION == "Oblivion":
+                    # mw-ob hack: do not export glowmap or bumpmap in nif file
+                    trishape.add_property(self.export_texturing_property(
+                        flags=0x0001, # standard
+                        applymode=self.APPLYMODE[mesh_base_mtex.blendmode if mesh_base_mtex else Blender.Texture.BlendModes["MIX"]],
+                        uvlayers=mesh_uvlayers,
+                        basemtex=mesh_base_mtex,
+                        #glowmtex=mesh_glow_mtex,
+                        #bumpmtex=mesh_bump_mtex,
+                        glossmtex=mesh_gloss_mtex,
+                        darkmtex=mesh_dark_mtex,
+                        detailmtex=mesh_detail_mtex,
+                        refmtex=mesh_ref_mtex))
                 else:
                     if (self.EXPORT_VERSION in self.USED_EXTRA_SHADER_TEXTURES
                         and self.EXPORT_EXTRA_SHADER_TEXTURES):
@@ -3436,6 +3449,10 @@ class NifExport(NifImportExport):
              self.export_tri_shapes(obj, 'none', node)
 
         elif self.EXPORT_VERSION in ('Oblivion', 'Fallout 3'):
+
+            # mw-ob hack: do not let export_collision with _far.nif
+            if ("_far.nif" in self.EXPORT_FILE.lower()):
+                return
 
             nodes = [ parent_block ]
             nodes.extend([ block for block in parent_block.children
