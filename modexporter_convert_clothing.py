@@ -20,9 +20,15 @@ else:
 error_filename = outputRoot + "Oblivion.output/error_list.txt"
 
 def error_list(err_string):
-    with open(error_filename, "a") as error_file:
+    try:
+        error_file = open(error_filename, "a")
         error_file.write(err_string + "\n")
+    except:
+        print "ERROR writing to error file! last message: " + str(err_string)
+        raw_input("PRESS ENTER TO CONTINUE")
 
+#=================== start script =========================
+Blender.Set("texturesdir", outputRoot + "Oblivion.output/Data/Textures/")
 argv = sys.argv
 argv = argv[argv.index("--") + 1:]
 out_file = argv[0]
@@ -34,7 +40,6 @@ if os.path.exists(in_file) == False:
 if os.path.exists(out_file) == True:
     print "Output file already exists, skipping file..."
     Blender.Quit()
-Blender.Set("texturesdir", outputRoot + "Oblivion.output/Data/Textures/")
 
 print "==========="
 print "Importing file: " + in_file
