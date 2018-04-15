@@ -29,16 +29,20 @@ def debug_output(message):
 
 def run():
     gimp.message("Script Started...")
-    gimp.message("Resizing icons...")
-    resize_icons()
-    resize_icons(output_dir + "menus50/icons/")
-    resize_icons(output_dir + "menus80/icons/")
-    gimp.message("Resizing lowres/lod textures...")
-    resize_lowres()
-    gimp.message("Converting all images to DDS...")    
-    convert_textures()
-    gimp.message("Script Complete!")
-
+    # check for prior run
+    if (os.path.exists(error_filename) == True):
+        gimp.message("Existing \Oblivion.output\gimp_log.txt was detected.  Please delete or rename this file if you are sure you want to rerun this sript and modify your textures.")
+        pdb.gimp_quit(-1)
+    else:
+        gimp.message("Resizing icons...")
+        resize_icons()
+        resize_icons(output_dir + "menus50/icons/")
+        resize_icons(output_dir + "menus80/icons/")
+        gimp.message("Resizing lowres/lod textures...")
+        resize_lowres()
+        gimp.message("Converting all images to DDS...")    
+        convert_textures()
+        gimp.message("Script Complete!")
 
 
 def fake_normalmap_file(filedir, filename):
