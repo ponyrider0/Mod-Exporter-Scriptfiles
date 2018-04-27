@@ -86,9 +86,9 @@ def perform_job():
     global blenderPath
     for in_file in input_files:
         if ("_clothing_" in jobname) and ("ugnd.nif" not in in_file.lower()):
-            conversion_script = "modexporter_convert_clothing.py"
+            conversion_script = "modexporter_blender_clothing.py"
         else:
-            conversion_script = "modexporter_blender_convert_one.py"
+            conversion_script = "modexporter_blender_generic.py"
         ## LOAD BLENDER HERE....
         print "==================="
         print "starting blender..." + in_file
