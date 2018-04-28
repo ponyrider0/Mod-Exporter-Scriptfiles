@@ -13,7 +13,8 @@ from gimpfu import *
 specular_strength = 0.27
 mgso_specular_fix = 25
 
-print_messages = True
+log_messages = False
+print_messages = False
 if (os.environ.get("MODEXPORTER_OUTPUTROOT") is not None):
     outputRoot = os.environ["MODEXPORTER_OUTPUTROOT"] + "/"
 else:
@@ -24,9 +25,10 @@ error_filename = outputRoot + "Oblivion.output/gimp_log.txt"
 def debug_output(message):
     if (print_messages == True):
         gimp.message(message)
-    with open(error_filename, "a") as error_file:
-        error_file.write(message + "\n")
-        error_file.close()
+    if (log_messages == True):
+        with open(error_filename, "a") as error_file:
+            error_file.write(message + "\n")
+            error_file.close()
 
 def make_normalmap_file(image, filedir, filename):
     global specular_strength
@@ -38,7 +40,7 @@ def make_normalmap_file(image, filedir, filename):
     normal_name = filename[:len(filename)-4] + "_n.dds"
     # check if normal map exists, return
     if os.path.exists(filedir + normal_name):
-        debug_output("Normalmap already exists: " + filedir + normal_name)
+        #debug_output("Normalmap already exists: " + filedir + normal_name)
         return
     # use normalmaps plugin
     #debug_output("DEBUG: running normalmap() plugin...")
@@ -117,7 +119,8 @@ def convert_textures(file_path):
             image = pdb.file_tga_load(file_path, filename)
         except:
             debug_output("ERROR trying to load: " + file_path + ", skipping...")
-            pdb.gimp_quit(-1)
+            return -1
+            #pdb.gimp_quit(-1)
     # save
     debug_output("DEBUG: saving: " + file_path + "...")
     pdb.file_dds_save(image, image.active_layer, #image, drawyable/layer
@@ -144,9 +147,9 @@ def convert_textures(file_path):
 
 
 def run(file_path):
-    gimp.message("Converting image to DDS...")    
+    #gimp.message("Converting image to DDS...")    
     convert_textures(file_path)
-    pdb.gimp_quit(0)
+    #pdb.gimp_quit(0)
 
 
 

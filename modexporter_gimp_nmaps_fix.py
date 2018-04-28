@@ -13,7 +13,8 @@ from gimpfu import *
 specular_strength = 0.27
 mgso_specular_fix = 25
 
-print_messages = True
+log_messages = False
+print_messages = False
 if (os.environ.get("MODEXPORTER_OUTPUTROOT") is not None):
     outputRoot = os.environ["MODEXPORTER_OUTPUTROOT"] + "/"
 else:
@@ -24,16 +25,16 @@ error_filename = outputRoot + "Oblivion.output/gimp_log.txt"
 def debug_output(message):
     if (print_messages == True):
         gimp.message(message)
-    with open(error_filename, "a") as error_file:
-        error_file.write(message + "\n")
-        error_file.close()
+    if (log_messages == True):
+        with open(error_filename, "a") as error_file:
+            error_file.write(message + "\n")
+            error_file.close()
 
 
 
 def fix_mgso_normalmaps(file_path):
     global mgso_specular_fix
     filename = os.path.basename(file_path)
-    filedir = os.path.dirname(file_path) + "/"
     # first, load existing mgso normal map
     try:
         image = pdb.gimp_file_load(file_path, filename)
@@ -42,7 +43,8 @@ def fix_mgso_normalmaps(file_path):
             image = pdb.file_tga_load(file_path, filename)
         except:
             debug_output("ERROR trying to load: " + file_path + ", skipping...")
-            pdb.gimp_quit(-1)
+            return -1
+            #pdb.gimp_quit(-1)
     # select all
     pdb.gimp_selection_all(image)
     # cut selection
@@ -54,7 +56,7 @@ def fix_mgso_normalmaps(file_path):
     # merge-down
     pdb.gimp_image_merge_down(image, templayer, 0)
     # save output
-    debug_output("DEBUG: fixing existing normalmap: " + filename)
+    debug_output("DEBUG: fixing existing normalmap: " + file_path)
     pdb.file_dds_save(image, image.active_layer, #image, drawyable/layer
                       file_path, filename, #filename, raw-filename
                       3, # compression: 0=none, 1=bc1/dxt1, 2=bc2/dxt3, 3=bc3/dxt5, 4=BC3n/dxt5nm, ... 8=alpha exponent... 
@@ -76,9 +78,9 @@ def fix_mgso_normalmaps(file_path):
 
 
 def run(file_path):
-    gimp.message("Fixing normalmap...")    
+    #gimp.message("Fixing normalmap...")    
     fix_mgso_normalmaps(file_path)
-    pdb.gimp_quit(0)
+    #pdb.gimp_quit(0)
 
 
 

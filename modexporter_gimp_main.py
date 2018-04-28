@@ -62,7 +62,7 @@ def recurse_subdirs(subdir=""):
     if (subdir == ""):
         subdir = output_dir
     if os.path.exists(subdir):
-        debug_print("DEBUG: searching subdir: " + subdir + "...")
+        #debug_print("DEBUG: searching subdir: " + subdir + "...")
         for filename in os.listdir(subdir):
             if os.path.isdir(subdir + filename):
                 # recurse down and do check below
@@ -74,7 +74,7 @@ def recurse_subdirs(subdir=""):
 
 
 
-def perform_job(in_file):
+def perform_job_old(in_file):
     global gimpPath
     # analyze in_file to decide which script to use
     # 1. convert to dds, 2. upsize icons, 3. downsize lowres, 4. fix mgso_normalmap
@@ -92,14 +92,14 @@ def perform_job(in_file):
         scriptfile = "modexporter_gimp_todds"
     ## LOAD GIMP HERE....
     #print "==================="
-    debug_print("\n================\nstarting gimp: [" + scriptfile + "] " + in_file)
+    #debug_print("\n================\nstarting gimp: [" + scriptfile + "] " + in_file)
     #print "==================="
     #raw_input("DEBUG: PRESS ENTER TO BEGIN")
     #bootstrap = "gimp.message('Hello, world')"
     #bootstrap = str("import sys;sys.path=['.']+sys.path;import " + scriptfile + ";gimp.message(str(sys.path))")
     #bootstrap = "import sys;sys.path=['.']+sys.path;import " + scriptfile + ";" + scriptfile + ".run('test')"
     bootstrap = "import sys;sys.path=['.']+sys.path;import " + scriptfile + ";" + scriptfile + ".run('" + in_file + "')"
-    debug_print("bootstrap=" + bootstrap)
+    #debug_print("bootstrap=" + bootstrap)
     #bootstrap = "import sys;sys.path=['.']+sys.path;gimp.message(str(sys.path));import " + scriptfile + ";" + scriptfile + ".run('" + in_file + "');pdb.gimp_quit(0)"
     #print "====GIMP script bootstrap:=======\n" + bootstrap + "\n================\n"
     resultcode = subprocess.call([gimpPath, \
@@ -121,19 +121,39 @@ def perform_job(in_file):
 
 
 
+def perform_job_new(joblist):
+    scriptfile = "modexporter_gimp_job"
+    bootstrap = "import sys;sys.path=['.']+sys.path;import " + scriptfile + ";" + scriptfile + ".run('" + joblist + "')"
+    #debug_print("bootstrap=" + bootstrap)
+    #print "====GIMP script bootstrap:=======\n" + bootstrap + "\n================\n"
+    resultcode = subprocess.call([gimpPath, \
+                          "-idf", "--batch-interpreter=python-fu-eval", \
+                          "-b", bootstrap])
+    os.remove(joblist)
+    if (resultcode != 0):
+        #print "ERROR: failed with resultcode=(" + str(resultcode) + ")"
+        # log error and continue
+        debug_print(joblist + " failed: resultcode=(" + str(resultcode) + ")\n")
+        return -1
+    else:
+        debug_print(joblist + " success.\n")
+        return 0  
+
+
 def main():
-    global error_filename    
+    global error_filename
+    global job_pool
     # check for prior run
     if (os.path.exists(error_filename) == True):
         print "Existing \\Oblivion.output\\gimp_log.txt was detected.  Please delete or rename this file if you are sure you want to rerun this sript and modify your textures."
         raw_input()
         os.remove(error_filename)
         #return(-1)
-    raw_input("CPUS=[" + str(CPU_COUNT) + "] PRESS ENTOER TO CONTINUE")
+    #raw_input("CPUS=[" + str(CPU_COUNT) + "] PRESS ENTOER TO CONTINUE")
     
     # prepare job_pool
     recurse_subdirs()
-    raw_input("JOB SIZE=[" + str(len(job_pool)) + "]  PRESS ENTER TO CONTINUE")
+    #raw_input("JOB SIZE=[" + str(len(job_pool)) + "]  PRESS ENTER TO CONTINUE")
 
 ##    # DEBUG: test job
 ##    for j in job_pool:
@@ -141,11 +161,30 @@ def main():
 ##            perform_job(j)
 ##            raw_input("PRESS ENTER TO CONTINUE")
 
+    # output joblists
+    for templist in glob.glob("gimp_templist*.job"):
+        os.remove(templist)
+    for list_index in range(0,CPU_COUNT,1):
+        joblist = "gimp_templist" + str(list_index) + ".job"
+        chunksize = int(len(job_pool) / CPU_COUNT)
+        startcount = int(chunksize * list_index)
+        stopcount = int(startcount + chunksize)
+        if list_index == CPU_COUNT-1:
+            stopcount = len(job_pool)
+        #print "DEBUG: startcount=" + str(startcount) + "; stopcount=" + str(stopcount) + "; job_pool=" + str(len(job_pool)) + "; chunksize=" + str(chunksize)
+        with open(joblist, "w") as temp_list:
+            for jobname in job_pool[startcount:stopcount]:
+                temp_list.write(jobname + "\n")
+            temp_list.close()
+    # test joblists
+    #for joblist in glob.glob("gimp_templist*.job"):
+    #    perform_job_new(joblist)
+
 
     # process job_pool
     pool = multiprocessing.Pool(processes=CPU_COUNT)
-#    pool = multiprocessing.Pool(processes=1)
-    result = pool.map_async(perform_job, job_pool)
+    joblists = glob.glob("gimp_templist*.job")
+    result = pool.map_async(perform_job_new, joblists)
     try:
         result.wait(timeout=99999999)
         pool.close()
@@ -154,6 +193,20 @@ def main():
         quit(-1)
     raw_input("JOBS completed.")
     return(0)
+
+
+##    # process job_pool
+##    pool = multiprocessing.Pool(processes=CPU_COUNT)
+###    pool = multiprocessing.Pool(processes=1)
+##    result = pool.map_async(perform_job, job_pool)
+##    try:
+##        result.wait(timeout=99999999)
+##        pool.close()
+##        pool.join()
+##    except KeyboardInterrupt:
+##        quit(-1)
+##    raw_input("JOBS completed.")
+##    return(0)
 
 
 

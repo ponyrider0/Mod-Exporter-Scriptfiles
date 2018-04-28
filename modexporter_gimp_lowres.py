@@ -13,7 +13,8 @@ from gimpfu import *
 specular_strength = 0.27
 mgso_specular_fix = 25
 
-print_messages = True
+log_messages = False
+print_messages = False
 if (os.environ.get("MODEXPORTER_OUTPUTROOT") is not None):
     outputRoot = os.environ["MODEXPORTER_OUTPUTROOT"] + "/"
 else:
@@ -24,9 +25,10 @@ error_filename = outputRoot + "Oblivion.output/gimp_log.txt"
 def debug_output(message):
     if (print_messages == True):
         gimp.message(message)
-    with open(error_filename, "a") as error_file:
-        error_file.write(message + "\n")
-        error_file.close()
+    if (log_messages == True):
+        with open(error_filename, "a") as error_file:
+            error_file.write(message + "\n")
+            error_file.close()
 
 def fake_normalmap_file(filedir, filename):
     # check for _n or _g in name
@@ -41,7 +43,8 @@ def fake_normalmap_file(filedir, filename):
         copyfile("8x8_n.dds", filedir + normal_name)
     except:
         debug_output("Error trying to create normalmap for: " + filename)
-        pdb.gimp_quit(-1)
+        return -1
+        #pdb.gimp_quit(-1)
 
 
 
@@ -61,7 +64,8 @@ def resize_lowres(file_path):
             image = pdb.file_tga_load(file_path, filename)
         except:
             debug_output("ERROR trying to load: " + file_path + ", skipping...")
-            pdb.gimp_quit(-1)
+            return -1
+            #pdb.gimp_quit(-1)
     use_width = False
     width = image.width
     height = image.height
@@ -111,9 +115,9 @@ def resize_lowres(file_path):
 
 
 def run(file_path):
-    gimp.message("Resizing lowres/lod texture...")
+    #gimp.message("Resizing lowres/lod texture...")
     resize_lowres(file_path)
-    pdb.gimp_quit(0)
+    #pdb.gimp_quit(0)
 
 
 
