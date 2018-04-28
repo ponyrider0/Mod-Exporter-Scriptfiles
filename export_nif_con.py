@@ -703,7 +703,7 @@ class NifExport(NifImportExport):
 
             # DEBUG: testing pyffi optimize here:
             try:
-                pyffi.spells.nif.optimize.SpellOptimizeGeometry2(data=data, toaster=toaster).recurse()
+                pyffi.spells.nif.optimize.SpellOptimizeGeometry(data=data, toaster=toaster).recurse()
             except:
                 optimize2.SpellOptimizeGeometry2(data=data, toaster=toaster).recurse()
             pyffi.spells.nif.optimize.SpellOptimizeCollisionBox(data=data, toaster=toaster).recurse()
