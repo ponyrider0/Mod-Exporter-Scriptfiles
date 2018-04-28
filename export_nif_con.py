@@ -27,6 +27,8 @@ from nif_common_con import __version__
 
 import pyffi.spells.nif
 import pyffi.spells.nif.fix
+import pyffi.spells.nif.optimize
+import pyffi.spells.nif.modify
 
 # --------------------------------------------------------------------------
 # ***** BEGIN LICENSE BLOCK *****
@@ -697,6 +699,23 @@ class NifExport(NifImportExport):
                                "Mopps for non-static objects may not function"
                                " correctly in-game. You may wish to use"
                                " simple primitives for collision.")
+
+            # DEBUG: testing pyffi optimize here:
+            pyffi.spells.nif.optimize.SpellOptimizeGeometry(data=data, toaster=toaster).recurse()
+            pyffi.spells.nif.optimize.SpellOptimizeCollisionBox(data=data, toaster=toaster).recurse()
+            pyffi.spells.nif.optimize.SpellOptimizeCollisionGeometry(data=data, toaster=toaster).recurse()
+            pyffi.spells.nif.optimize.SpellMergeDuplicates(data=data, toaster=toaster).recurse()
+            pyffi.spells.nif.fix.SpellDelUnusedRoots(data=data, toaster=toaster).recurse()
+
+            # DEBUG: for _far nifs
+            if ("_far.nif" in self.EXPORT_FILE.lower()):
+                #pyffi.spells.nif.modify.SpellDelBSXFlags(data=data, toaster=toaster).recurse()
+                #pyffi.spells.nif.modify.SpellDelStringExtraDatas(data=data, toaster=toaster).recurse()
+                pyffi.spells.nif.fix.SpellDelTangentSpace(data=data, toaster=toaster).recurse()
+                #pyffi.spells.nif.modify.SpellDelCollisionData(data=data, toaster=toaster).recurse()
+                #pyffi.spells.nif.modify.SpellDelAnimation(data=data, toaster=toaster).recurse()
+                #pyffi.spells.nif.modify.SpellDisableParallax(data=data, toaster=toaster).recurse()
+                #pyffi.spells.nif.modify.SpellLowResTexturePath(data=data, toaster=toaster).recurse()
 
             # delete original scene root if a scene root object was already
             # defined

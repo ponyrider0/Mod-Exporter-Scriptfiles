@@ -11,6 +11,3 @@ REM set "BLENDEREXE=C:\Program Files (x86)\Blender Foundation\Blender\blender.ex
 set "BLENDEREXE=C:\Blender\blender.exe"
 
 "%PYTHONEXE%" modexporter_blender_main.py
-
-echo "Blender conversion complete.  Press any key to close window."
-pause

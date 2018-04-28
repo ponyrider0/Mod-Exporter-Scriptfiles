@@ -42,8 +42,6 @@ try:
 except NotImplementedError:
     CPU_COUNT = 1
 
-
-
 def debug_print(err_string):
     global error_filename
     print err_string

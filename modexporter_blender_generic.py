@@ -150,10 +150,9 @@ if os.path.exists(in_file) == False:
 if os.path.exists(out_file) == True:
     print "Output file already exists, skipping file..."
     Blender.Quit()
-fullres_collisions = False
+fullres_collisions = True
 if ("--fullres_collisions" in argv):
     fullres_collisions = bool(int(argv[argv.index("--fullres_collisions") + 1]))
-fullres_collisions = False
 if ("--reduction_scale" in argv):
     reduction_scale = int(argv[argv.index("--reduction_scale") + 1])
 else:

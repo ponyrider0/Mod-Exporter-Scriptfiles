@@ -1,5 +1,6 @@
 import sys
 import os.path
+import multiprocessing
 import subprocess
 import time
 import glob
@@ -27,6 +28,11 @@ input_path = outputRoot + "Oblivion.output/temp/Meshes/"
 output_path = outputRoot + "Oblivion.output/Data/Meshes/"
 outlist_path = outputRoot + "Oblivion.output/jobs/"
 blenderFilename = "empty.blend"
+try:
+    CPU_COUNT = multiprocessing.cpu_count()
+except NotImplementedError:
+    CPU_COUNT = 1
+fullres_collisions = True
 
 def error_list(err_string):
     with open(error_filename, "a") as error_file:
@@ -79,7 +85,69 @@ def select_job_file():
         print "No jobs found. DEBUG: search was for: " + outlist_path + "*.job"
         return -1
 
-def perform_job():
+
+
+def perform_job_new_clothing(filename):
+    global fullres_collisions
+    global blenderPath
+    if ("ugnd.nif" in filename.lower()):
+        conversion_script = "modexporter_blender_generic.py"
+    else:
+        conversion_script = "modexporter_blender_clothing.py"
+    #print "starting blender..." + filename
+    #print "DEBUG: blenderPath=" + blenderPath + "; script=" + conversion_script + "; fullres_collisions=" + str(int(fullres_collisions))    
+    rc = subprocess.call([blenderPath, blenderFilename, "-b", "-p", "0", "0", "1", "1", "-P", conversion_script, "--", filename,"--fullres_collisions", str(int(fullres_collisions))])
+    if (rc != 0):
+        rc = subprocess.call([blenderPath, blenderFilename, "-b", "-p", "0", "0", "1", "1", "-P", conversion_script, "--", filename,"--fullres_collisions", str(int(fullres_collisions))])
+        if (rc != 0):
+            # log error and continue
+            error_list(filename + " (launch error) could not start blender.")
+            return -1
+    return 0
+
+def perform_job_new_generic(filename):
+    global fullres_collisions
+    global blenderPath
+    conversion_script = "modexporter_blender_generic.py"
+    #print "starting blender..." + filename
+    #print "DEBUG: blenderPath=" + blenderPath + "; script=" + conversion_script + "; fullres_collisions=" + str(int(fullres_collisions))    
+    if ("_far.nif" in filename):
+        rc = subprocess.call([blenderPath, blenderFilename, "-p", "0", "0", "1", "1", "-P", conversion_script, "--", filename,"--fullres_collisions", str(int(fullres_collisions))])
+    else:
+        rc = subprocess.call([blenderPath, blenderFilename, "-b", "-p", "0", "0", "1", "1", "-P", conversion_script, "--", filename,"--fullres_collisions", str(int(fullres_collisions))])
+    if (rc != 0):
+        if ("_far.nif" in filename):
+            rc = subprocess.call([blenderPath, blenderFilename, "-p", "0", "0", "1", "1", "-P", conversion_script, "--", filename,"--fullres_collisions", str(int(fullres_collisions))])
+        else:
+            rc = subprocess.call([blenderPath, blenderFilename, "-b", "-p", "0", "0", "1", "1", "-P", conversion_script, "--", filename,"--fullres_collisions", str(int(fullres_collisions))])
+        if (rc != 0):
+            # log error and continue
+            error_list(filename + " (launch error) could not start blender.")
+            return -1
+    return 0
+
+def perform_job_new(jobname):
+    global CPU_COUNT
+    global input_files
+    if (len(input_files) == 0):
+        return 0
+    #print "CPUS=[" + str(CPU_COUNT) + "]"
+    #raw_input("JOB SIZE=[" + str(len(input_files)) + "]  PRESS ENTER TO CONTINUE")
+    pool = multiprocessing.Pool(processes=CPU_COUNT)
+#    pool = multiprocessing.Pool(processes=1)
+    if ("_clothing_" in jobname):
+        result = pool.map_async(perform_job_new_clothing, input_files)
+    else:
+        result = pool.map_async(perform_job_new_generic, input_files)
+    try:
+        result.wait(timeout=99999999)
+        pool.close()
+        pool.join()
+    except KeyboardInterrupt:
+        return -1
+    return 0
+
+def perform_job_old():
     global jobname
     global input_files
     global fullres_collisions
@@ -131,7 +199,7 @@ def process_next_job():
     jobname = ""
     if (select_job_file() == -1):
         return 0
-    if (perform_job() == -1):
+    if (perform_job_new(jobname) == -1):
         print "DEBUG: error occured while processing job. Please see Oblivion.output\error_list.txt for more information."
         raw_input("Press ENTER to try to continue with next file or CTRL+C to quit.")
         return -1
