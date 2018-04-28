@@ -110,7 +110,7 @@ def perform_job_new_generic(filename):
     global blenderPath
     conversion_script = "modexporter_blender_generic.py"
     #print "starting blender..." + filename
-    #print "DEBUG: blenderPath=" + blenderPath + "; script=" + conversion_script + "; fullres_collisions=" + str(int(fullres_collisions))    
+    #print "DEBUG: blenderPath=" + blenderPath + "; script=" + conversion_script + "; fullres_collisions=" + str(int(fullres_collisions))
     if ("_far.nif" in filename):
         rc = subprocess.call([blenderPath, blenderFilename, "-p", "0", "0", "1", "1", "-P", conversion_script, "--", filename,"--fullres_collisions", str(int(fullres_collisions))])
     else:
@@ -144,7 +144,7 @@ def perform_job_new(jobname):
         pool.close()
         pool.join()
     except KeyboardInterrupt:
-        return -1
+        quit(-1)
     return 0
 
 def perform_job_old():

@@ -28,6 +28,7 @@ from nif_common_con import __version__
 import pyffi.spells.nif
 import pyffi.spells.nif.fix
 import pyffi.spells.nif.optimize
+import modexporter_optimize as optimize2
 import pyffi.spells.nif.modify
 
 # --------------------------------------------------------------------------
@@ -701,7 +702,10 @@ class NifExport(NifImportExport):
                                " simple primitives for collision.")
 
             # DEBUG: testing pyffi optimize here:
-            pyffi.spells.nif.optimize.SpellOptimizeGeometry(data=data, toaster=toaster).recurse()
+            try:
+                pyffi.spells.nif.optimize.SpellOptimizeGeometry2(data=data, toaster=toaster).recurse()
+            except:
+                optimize2.SpellOptimizeGeometry2(data=data, toaster=toaster).recurse()
             pyffi.spells.nif.optimize.SpellOptimizeCollisionBox(data=data, toaster=toaster).recurse()
             pyffi.spells.nif.optimize.SpellOptimizeCollisionGeometry(data=data, toaster=toaster).recurse()
             pyffi.spells.nif.optimize.SpellMergeDuplicates(data=data, toaster=toaster).recurse()
