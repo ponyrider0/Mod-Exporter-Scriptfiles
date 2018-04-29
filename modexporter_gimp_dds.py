@@ -13,8 +13,8 @@ from gimpfu import *
 specular_strength = 0.27
 mgso_specular_fix = 25
 
-log_messages = False
-print_messages = False
+log_messages = True
+print_messages = True
 if (os.environ.get("MODEXPORTER_OUTPUTROOT") is not None):
     outputRoot = os.environ["MODEXPORTER_OUTPUTROOT"] + "/"
 else:

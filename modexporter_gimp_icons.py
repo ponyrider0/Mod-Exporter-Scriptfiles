@@ -13,8 +13,8 @@ from gimpfu import *
 specular_strength = 0.27
 mgso_specular_fix = 25
 
-log_messages = False
-print_messages = False
+log_messages = True
+print_messages = True
 if (os.environ.get("MODEXPORTER_OUTPUTROOT") is not None):
     outputRoot = os.environ["MODEXPORTER_OUTPUTROOT"] + "/"
 else:
@@ -54,7 +54,7 @@ def resize_icons(file_path):
     # check dimensions
     if (image.height != 64) or (image.width != 64):
         # resize to 64x64
-        debug_output("DEBUG: scaling: " + file_path + "...")
+        #debug_output("DEBUG: scaling: " + file_path + "...")
         pdb.gimp_image_scale(image, 64, 64)
     else:
         debug_output("DEBUG: already 64x64: " + file_path)

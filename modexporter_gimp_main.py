@@ -131,7 +131,7 @@ def perform_job_new(joblist):
     if (resultcode != 0):
         #print "ERROR: failed with resultcode=(" + str(resultcode) + ")"
         # log error and continue
-        debug_print(joblist + " failed: resultcode=(" + str(resultcode) + ")\n")
+        debug_print(joblist + " failed: resultcode=(" + str(format(resultcode, '08x')) + ")\n")
         return -1
     else:
         debug_print(joblist + " success.\n")

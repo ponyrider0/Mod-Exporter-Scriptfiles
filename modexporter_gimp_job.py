@@ -9,7 +9,7 @@ import modexporter_gimp_nmaps_fix
 import modexporter_gimp_dds
 import modexporter_gimp_lowres
 
-log_messages = False
+log_messages = True
 print_messages = True
 if (os.environ.get("MODEXPORTER_OUTPUTROOT") is not None):
     outputRoot = os.environ["MODEXPORTER_OUTPUTROOT"] + "/"
@@ -33,7 +33,7 @@ def run(joblist):
     job_file = open(joblist, "r")
     for line in job_file:
         filename = line.rstrip("\r\n")
-        debug_output(filename)
+        #debug_output(filename)
         if (os.path.exists(filename) == False):
             continue
         # use one of 4 scripts

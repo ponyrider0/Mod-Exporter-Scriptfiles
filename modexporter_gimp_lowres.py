@@ -13,8 +13,8 @@ from gimpfu import *
 specular_strength = 0.27
 mgso_specular_fix = 25
 
-log_messages = False
-print_messages = False
+log_messages = True
+print_messages = True
 if (os.environ.get("MODEXPORTER_OUTPUTROOT") is not None):
     outputRoot = os.environ["MODEXPORTER_OUTPUTROOT"] + "/"
 else:
@@ -85,12 +85,12 @@ def resize_lowres(file_path):
         if (use_width == True):
             ratio = float(shortlength) / float(width)
             longlength = int(height * ratio)
-            debug_output("DEBUG: scaling to: [" + str(shortlength) + " x " + str(longlength) + "]...")
+            #debug_output("DEBUG: scaling to: [" + str(shortlength) + " x " + str(longlength) + "]...")
             pdb.gimp_image_scale(image, shortlength, longlength)
         else:
             ratio = float(shortlength) / float(height)
             longlength = int(width * ratio)
-            debug_output("DEBUG: scaling to: [" + str(longlength) + " x " + str(shortlength) + "]...")
+            #debug_output("DEBUG: scaling to: [" + str(longlength) + " x " + str(shortlength) + "]...")
             pdb.gimp_image_scale(image, longlength, shortlength)
     # save
     debug_output("DEBUG: saving: " + file_path + "...")
