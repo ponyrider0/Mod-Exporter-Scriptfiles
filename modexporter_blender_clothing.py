@@ -50,7 +50,7 @@ config["IMPORT_SKELETON"] = 0
 NifImport(**config)
 
 # try to detect Better Clothes skeleton
-altskeleton = False
+altskeleton = 0
 isRobe = False
 try:
     arm = bpy.data.armatures["Bip01"]
@@ -59,9 +59,11 @@ except KeyError, e:
     Blender.Quit()
 bone = arm.bones["Bip01 Pelvis"]
 if (abs(bone.head["ARMATURESPACE"][0]) > 0.0001):
-    altskeleton = True
+    altskeleton = 1
     #raw_input("Bad Skeleton detected")
-elif (abs(bone.head["ARMATURESPACE"][2]) > 0.1):
+if (abs(bone.head["ARMATURESPACE"][1]) > 0.1 and abs(bone.head["ARMATURESPACE"][2]) > 7.6):
+    altskeleton = 2
+elif (abs(bone.head["ARMATURESPACE"][1]) > 0.1 and abs(bone.head["ARMATURESPACE"][2]) > 1.2):
     isRobe = True
     #raw_input("Robe detected")
 
@@ -85,8 +87,14 @@ ob_selection = list()
 for ob in bpy.data.objects:
     if ob.type == "Mesh" or ob.type == "Empty":
         ob_selection.append(ob)
-        if (altskeleton == True):
+        if (altskeleton == 1):
             ob.setLocation(ob.loc[0], ob.loc[1]+0.33, ob.loc[2])
+        elif (altskeleton == 2):
+            ob.setEuler(0, 0, 0)
+            if ("glove7" in in_file.lower()):
+                ob.setLocation(ob.loc[0], ob.loc[1]+0.1, ob.loc[2]-1)					
+            else:  
+                ob.setLocation(ob.loc[0], ob.loc[1]+0.33, ob.loc[2])					
         elif (isRobe == True):
             ob.setEuler(0, 0, math.pi)
             ob.setLocation(ob.loc[0], ob.loc[1]+0.12, ob.loc[2]+1.1)
@@ -96,10 +104,12 @@ for ob in bpy.data.objects:
 print "==========="
 print "Importing skeleton"
 print "==========="
-if (altskeleton == True):
+if (altskeleton != 0):
     config["IMPORT_FILE"] = "export_skeleton_b.nif"
 else:
-    config["IMPORT_FILE"] = "export_skeleton_a.nif"        
+    config["IMPORT_FILE"] = "export_skeleton_a.nif"
+if ("glove7" in in_file.lower()):
+    config["IMPORT_FILE"] = "FullHumanBodyImportReadyFemale.nif"
 config["IMPORT_SKELETON"] = 1
 config["EXPORT_OBJECTS"] = ob_selection
 NifImport(**config)
