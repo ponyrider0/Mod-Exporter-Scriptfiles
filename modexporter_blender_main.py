@@ -8,6 +8,12 @@ import glob
 from os import listdir
 from os.path import isfile, join
 
+from pyffi.formats.nif import NifFormat
+import pyffi.spells.nif.modify
+import pyffi.spells.nif.fix
+import pyffi.spells.nif.optimize
+import pyffi.spells.nif
+
 if (os.environ.get("BLENDEREXE") is not None):
     blenderPath = os.environ["BLENDEREXE"]
 else:
@@ -33,6 +39,28 @@ try:
 except NotImplementedError:
     CPU_COUNT = 1
 fullres_collisions = True
+
+nifConvPath = "NIF_Conv.exe"
+
+def optimize_nifdata(x):
+    pyffi.spells.nif.optimize.SpellOptimizeGeometry(data=x).recurse()
+#    toaster = pyffi.spells.nif.NifToaster()
+#    toaster.options["arg"] = -0.1
+#    spell = pyffi.spells.nif.optimize.SpellReduceGeometry(data=x, toaster=toaster)
+#    spell.recurse()
+    return x
+
+def postprocessNif(filename):
+    input_stream = open(filename, "rb")
+    nifdata = NifFormat.Data()
+    nifdata.read(input_stream)
+    input_stream.close()
+    nifdata = optimize_nifdata(nifdata)
+    output_stream = open(filename, "wb")
+    nifdata.write(output_stream)
+    output_stream.close()
+    print "PostProcessing(" + filename + ") complete."
+
 
 def error_list(err_string):
     with open(error_filename, "a") as error_file:
@@ -64,19 +92,26 @@ def select_job_file():
             fullres_collisions = True
         outlist_file = open(jobname, "r")
         print "Job file selected: " + jobname
-        for line in outlist_file: 
+        for raw_line in outlist_file: 
             # remove eol char
+            args_list = []
+            args_list = raw_line.rstrip("\r\n").split(":")
+#            print "DEBUG: raw_line = %s" % (raw_line)
+#            print "DEBUG: args_list (#%d) = %s" % (len(args_list), args_list[0])
+            line = args_list[0]
             in_filename = input_path + line.rstrip("\r\n")
             out_filename = output_path + line.rstrip("\r\n")
             #print "DEBUG: looking for: " + filename + "..."
-            if (os.path.exists(in_filename) == False) or ("morro/e/" in in_filename):
+#            if (os.path.exists(in_filename) == False) or ("morro/e/" in in_filename):
+            if ("morro/e/" in in_filename):
                 #print "DEBUG: file not found, skipping."
                 continue
             elif (os.path.exists(out_filename) == True):
                 continue
             else:
                 #print "DEBUG: input file found, adding to queue for processing."
-                input_files.append(out_filename)
+#                args_list[0] = out_filename
+                input_files.append(args_list)
         outlist_file.close()
         if (input_files == []):
             print "WARNING: no valid files were found in jobfile:\n" + jobname
@@ -87,43 +122,86 @@ def select_job_file():
 
 
 
-def perform_job_new_clothing(filename):
+def perform_job_new_clothing(filename_args):
     global fullres_collisions
     global blenderPath
+
+    filename = filename_args[0]
+    orig_file = ""
+    cmdflags = ""
+    if len(filename_args) > 1:
+        orig_file = filename_args[1]
+    if len(filename_args) > 2:
+        cmdflags = filename_args[2]
+
     if ("ugnd.nif" in filename.lower()):
         conversion_script = "modexporter_blender_generic.py"
     else:
         conversion_script = "modexporter_blender_clothing.py"
     #print "starting blender..." + filename
-    #print "DEBUG: blenderPath=" + blenderPath + "; script=" + conversion_script + "; fullres_collisions=" + str(int(fullres_collisions))    
-    rc = subprocess.call([blenderPath, blenderFilename, "-b", "-p", "0", "0", "1", "1", "-P", conversion_script, "--", filename,"--fullres_collisions", str(int(fullres_collisions))])
+    #print "DEBUG: blenderPath=" + blenderPath + "; script=" + conversion_script + "; fullres_collisions=" + str(int(fullres_collisions))
+    rc = subprocess.call([blenderPath, blenderFilename, "-b", "-p", "0", "0", "1", "1", "-P", conversion_script, "--", output_path+filename,"--fullres_collisions", str(int(fullres_collisions))])
     if (rc != 0):
-        rc = subprocess.call([blenderPath, blenderFilename, "-b", "-p", "0", "0", "1", "1", "-P", conversion_script, "--", filename,"--fullres_collisions", str(int(fullres_collisions))])
+        rc = subprocess.call([blenderPath, blenderFilename, "-b", "-p", "0", "0", "1", "1", "-P", conversion_script, "--", output_path+filename,"--fullres_collisions", str(int(fullres_collisions))])
         if (rc != 0):
             # log error and continue
             error_list(filename + " (launch error) could not start blender.")
             return -1
     return 0
 
-def perform_job_new_generic(filename):
+def perform_job_new_generic(filename_args):
     global fullres_collisions
     global blenderPath
+
+    filename = filename_args[0]
+    orig_file = ""
+    cmdflags = ""
+    if len(filename_args) > 1:
+        orig_file = filename_args[1]
+    if len(filename_args) > 2:
+        cmdflags = filename_args[2]
+#    print "DEBUG: args_list (#%d) = filename=%s, orig_file=%s, cmdflags=%s" % (len(filename_args), filename, orig_file, cmdflags)
+    
     conversion_script = "modexporter_blender_generic.py"
     #print "starting blender..." + filename
     #print "DEBUG: blenderPath=" + blenderPath + "; script=" + conversion_script + "; fullres_collisions=" + str(int(fullres_collisions))
     if ("_far.nif" in filename):
-        rc = subprocess.call([blenderPath, blenderFilename, "-p", "0", "0", "1", "1", "-P", conversion_script, "--", filename,"--fullres_collisions", str(int(fullres_collisions))])
+        return -1
     else:
-        rc = subprocess.call([blenderPath, blenderFilename, "-b", "-p", "0", "0", "1", "1", "-P", conversion_script, "--", filename,"--fullres_collisions", str(int(fullres_collisions))])
+        nifCall = []
+        nifCall.append(nifConvPath)
+        nifCall.append(orig_file)
+        if cmdflags is not "" and cmdflags is not " ":
+            for flags in cmdflags.split(" "):
+                if flags is not "" and flags is not " ":
+                    nifCall.append(flags)
+        else:
+            cmdflags = None
+        nifCall.append("-d")
+        nifCall.append(filename)
+        # attempt #1
+        rc = subprocess.call(nifCall)
+        if os.path.exists(output_path+filename):
+            rc = 0
+        else:
+            rc = -1
     if (rc != 0):
         if ("_far.nif" in filename):
-            rc = subprocess.call([blenderPath, blenderFilename, "-p", "0", "0", "1", "1", "-P", conversion_script, "--", filename,"--fullres_collisions", str(int(fullres_collisions))])
-        else:
-            rc = subprocess.call([blenderPath, blenderFilename, "-b", "-p", "0", "0", "1", "1", "-P", conversion_script, "--", filename,"--fullres_collisions", str(int(fullres_collisions))])
-        if (rc != 0):
-            # log error and continue
-            error_list(filename + " (launch error) could not start blender.")
             return -1
+        else:
+            # attempt #2
+            rc = subprocess.call([blenderPath, blenderFilename, "-b", "-p", "0", "0", "1", "1", "-P", conversion_script, "--", output_path+filename,"--fullres_collisions", str(int(fullres_collisions))])
+        if (rc != 0):
+            if ("_far.nif" in filename):
+                return -1
+            else:
+                #attempt #3
+                rc = subprocess.call([blenderPath, blenderFilename, "-b", "-p", "0", "0", "1", "1", "-P", conversion_script, "--", output_path+filename,"--fullres_collisions", str(int(fullres_collisions))])
+            if (rc != 0):
+                # log error and continue
+                error_list(filename + " (launch error) could not start blender.")
+                return -1
+    postprocessNif(output_path+filename)
     return 0
 
 def perform_job_new(jobname):
@@ -147,34 +225,34 @@ def perform_job_new(jobname):
         quit(-1)
     return 0
 
-def perform_job_old():
-    global jobname
-    global input_files
-    global fullres_collisions
-    global blenderPath
-    for in_file in input_files:
-        if ("_clothing_" in jobname) and ("ugnd.nif" not in in_file.lower()):
-            conversion_script = "modexporter_blender_clothing.py"
-        else:
-            conversion_script = "modexporter_blender_generic.py"
-        ## LOAD BLENDER HERE....
-        print "==================="
-        print "starting blender..." + in_file
-        print "==================="
-        #raw_input("DEBUG: PRESS ENTER TO BEGIN")
-        if ("_far.nif" in in_file):
-            rc = subprocess.call([blenderPath, blenderFilename, "-p", "0", "0", "1", "1", "-P", conversion_script, "--", in_file,"--fullres_collisions", str(int(fullres_collisions))])
-        else:
-            rc = subprocess.call([blenderPath, blenderFilename, "-b", "-p", "0", "0", "1", "1", "-P", conversion_script, "--", in_file,"--fullres_collisions", str(int(fullres_collisions))])
-        if (rc != 0):
-            print "Error launching blender: retrying with gui enabled..."
-            #raw_input("Press Enter to continue.")
-            rc = subprocess.call([blenderPath, blenderFilename, "-p", "0", "0", "1", "1", "-P", conversion_script, "--", in_file,"--fullres_collisions", str(int(fullres_collisions))])
-            if (rc != 0):
-                print "Unable to launch blender, logging error and skipping file..."
-                # log error and continue
-                error_list(in_file + " (launch error) could not start blender.")
-                return -1
+##def perform_job_old():
+##    global jobname
+##    global input_files
+##    global fullres_collisions
+##    global blenderPath
+##    for in_file in input_files:
+##        if ("_clothing_" in jobname) and ("ugnd.nif" not in in_file.lower()):
+##            conversion_script = "modexporter_blender_clothing.py"
+##        else:
+##            conversion_script = "modexporter_blender_generic.py"
+##        ## LOAD BLENDER HERE....
+##        print "==================="
+##        print "starting blender..." + in_file
+##        print "==================="
+##        #raw_input("DEBUG: PRESS ENTER TO BEGIN")
+##        if ("_far.nif" in in_file):
+##            rc = subprocess.call([blenderPath, blenderFilename, "-p", "0", "0", "1", "1", "-P", conversion_script, "--", in_file,"--fullres_collisions", str(int(fullres_collisions))])
+##        else:
+##            rc = subprocess.call([blenderPath, blenderFilename, "-b", "-p", "0", "0", "1", "1", "-P", conversion_script, "--", in_file,"--fullres_collisions", str(int(fullres_collisions))])
+##        if (rc != 0):
+##            print "Error launching blender: retrying with gui enabled..."
+##            #raw_input("Press Enter to continue.")
+##            rc = subprocess.call([blenderPath, blenderFilename, "-p", "0", "0", "1", "1", "-P", conversion_script, "--", in_file,"--fullres_collisions", str(int(fullres_collisions))])
+##            if (rc != 0):
+##                print "Unable to launch blender, logging error and skipping file..."
+##                # log error and continue
+##                error_list(in_file + " (launch error) could not start blender.")
+##                return -1
 
             
 def complete_job():
