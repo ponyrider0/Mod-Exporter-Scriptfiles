@@ -178,7 +178,7 @@ def perform_job_new_generic(filename_args):
         else:
             cmdflags = None
         nifCall.append("-d")
-        nifCall.append(filename)
+        nifCall.append(filename.replace("/", "\\"))
         # attempt #1
         rc = subprocess.call(nifCall)
         if os.path.exists(output_path+filename):
