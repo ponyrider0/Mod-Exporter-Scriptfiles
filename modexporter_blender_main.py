@@ -42,24 +42,65 @@ fullres_collisions = True
 
 nifConvPath = "NIF_Conv.exe"
 
-def optimize_nifdata(x):
+class SpellDelMaterialProperties(pyffi.spells.nif.modify._SpellDelBranchClasses):
+    BRANCH_CLASSES_TO_BE_DELETED = (NifFormat.NiMaterialProperty,)
+    SPELLNAME = "delmaterialprop"
+
+
+def postprocess_nifdata(x):
+##    pyffi.spells.nif.optimize.SpellOptimizeGeometry(data=x).recurse()
+###    toaster = pyffi.spells.nif.NifToaster()
+###    toaster.options["arg"] = -0.1
+###    spell = pyffi.spells.nif.optimize.SpellReduceGeometry(data=x, toaster=toaster)
+###    spell.recurse()
+#    delBranches = pyffi.spells.nif.modify._SpellDelBranchClasses(data=x)
+#    delBranches.BRANCH_CLASSES_TO_BE_DELETED = (NifFormat.NiMaterialProperty,)
+#    delBranches.recurse()
+#    pyffi.spells.nif.optimize.SpellCleanRefLists(data=x).recurse()
+
+#    SpellDelMaterialProperties(data=x).recurse()
+    delBranches = pyffi.spells.nif.modify._SpellDelBranchClasses(data=x)
+    delBranches.BRANCH_CLASSES_TO_BE_DELETED = (NifFormat.NiMaterialProperty,)
+    delBranches.recurse()
+    pyffi.spells.nif.fix.SpellDelUnusedRoots(data=x).recurse()
+    pyffi.spells.nif.optimize.SpellCleanRefLists(data=x).recurse()
+#    pyffi.spells.nif.fix.SpellDetachHavokTriStripsData(data=x).recurse()
+#    pyffi.spells.nif.fix.SpellFixTexturePath(data=x).recurse()
+#    pyffi.spells.nif.fix.SpellFixBhkSubShapes(data=x).recurse()
+#    pyffi.spells.nif.fix.SpellFixEmptySkeletonRoots(data=x).recurse()
     pyffi.spells.nif.optimize.SpellOptimizeGeometry(data=x).recurse()
-#    toaster = pyffi.spells.nif.NifToaster()
-#    toaster.options["arg"] = -0.1
-#    spell = pyffi.spells.nif.optimize.SpellReduceGeometry(data=x, toaster=toaster)
-#    spell.recurse()
+    pyffi.spells.nif.optimize.SpellOptimizeCollisionBox(data=x).recurse()
+    pyffi.spells.nif.optimize.SpellOptimizeCollisionGeometry(data=x).recurse()
+    pyffi.spells.nif.optimize.SpellMergeDuplicates(data=x).recurse()
+    
+    print "DEBUG: postproccessed!"
     return x
 
 def postprocessNif(filename):
     input_stream = open(filename, "rb")
     nifdata = NifFormat.Data()
-    nifdata.read(input_stream)
+    try:
+        nifdata.read(input_stream)
+    except Exception as e:
+        # nif-read error, something wrong with NIF, delete...
+        input_stream.close()
+        os.remove(filename)
+        s = "\n\nERROR reading(" + filename + "); deleting file."
+        print(s)
+        error_list(s)
+        return -1
     input_stream.close()
-    nifdata = optimize_nifdata(nifdata)
-    output_stream = open(filename, "wb")
-    nifdata.write(output_stream)
-    output_stream.close()
-    print "PostProcessing(" + filename + ") complete."
+    try:
+        nifdata = postprocess_nifdata(nifdata)
+        output_stream = open(filename, "wb")
+        nifdata.write(output_stream)
+        output_stream.close()
+        print "PostProcessing(" + filename + ") complete."
+    except Exception as e:
+        s = "\n\nERROR post-processing(" + filename + ")..."
+        print(s)
+        error_list(s)
+    return 0
 
 
 def error_list(err_string):
@@ -147,7 +188,8 @@ def perform_job_new_clothing(filename_args):
             # log error and continue
             error_list(filename + " (launch error) could not start blender.")
             return -1
-    return 0
+    rc = postprocessNif(output+filename)
+    return rc
 
 def perform_job_new_generic(filename_args):
     global fullres_collisions
@@ -182,7 +224,7 @@ def perform_job_new_generic(filename_args):
         # attempt #1
         rc = subprocess.call(nifCall)
         if os.path.exists(output_path+filename):
-            rc = 0
+            rc = postprocessNif(output_path+filename)
         else:
             rc = -1
     if (rc != 0):
@@ -201,8 +243,8 @@ def perform_job_new_generic(filename_args):
                 # log error and continue
                 error_list(filename + " (launch error) could not start blender.")
                 return -1
-    postprocessNif(output_path+filename)
-    return 0
+        rc = postprocessNif(output_path+filename)
+    return rc
 
 def perform_job_new(jobname):
     global CPU_COUNT
