@@ -6,8 +6,9 @@ REM entire statement. ex: set "PYTHONEXE=C:\python26\python.exe"
 REM
 REM =============================================================
 
+set "MODEXPORTER_OUTPUTROOT=C:"
+
 set "PYTHONEXE=C:\Python26\python.exe"
-REM set "BLENDEREXE=C:\Program Files (x86)\Blender Foundation\Blender\blender.exe"
 set "BLENDEREXE=C:\Blender\blender.exe"
 
 "%PYTHONEXE%" modexporter_blender_main.py
