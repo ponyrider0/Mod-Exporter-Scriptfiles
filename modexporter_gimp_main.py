@@ -120,6 +120,7 @@ def perform_job_old(in_file):
 
 
 def perform_job_new(joblist):
+    print "Spawning GIMP processing thread..."
     scriptfile = "modexporter_gimp_job"
     bootstrap = "import sys;sys.path=['.']+sys.path;import " + scriptfile + ";" + scriptfile + ".run('" + joblist + "')"
     #debug_print("bootstrap=" + bootstrap)
@@ -143,10 +144,14 @@ def main():
     global job_pool
     # check for prior run
     if (os.path.exists(error_filename) == True):
-        print "Existing \\Oblivion.output\\gimp_log.txt was detected.  Please delete or rename this file if you are sure you want to rerun this sript and modify your textures."
-        raw_input()
-        os.remove(error_filename)
-        #return(-1)
+        print "==========="
+        print "WARNING: " + error_filename + " found."
+        print ""
+        print "The script has detected that texture processing has already been done on this folder.  If you are sure that you would like to run this script again, please delete or rename the \"" + error_filename + "\", and then rerun the script."
+        print "==========="
+        print ""
+        raw_input("Press ENTER to quit texture processing script.")
+        return(-1)
     #raw_input("CPUS=[" + str(CPU_COUNT) + "] PRESS ENTOER TO CONTINUE")
     
     # prepare job_pool
@@ -160,6 +165,7 @@ def main():
 ##            raw_input("PRESS ENTER TO CONTINUE")
 
     # output joblists
+    print "Creating joblists..."
     for templist in glob.glob("gimp_templist*.job"):
         os.remove(templist)
     for list_index in range(0,CPU_COUNT,1):
@@ -189,7 +195,9 @@ def main():
         pool.join()
     except KeyboardInterrupt:
         quit(-1)
-    raw_input("JOBS completed.")
+    print "--------------------------------"
+    print "Jobs completed."
+    print "--------------------------------"
     return(0)
 
 
