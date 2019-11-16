@@ -1,0 +1,27 @@
+@echo off
+
+REM =============================================================
+REM
+REM Modify the set PYTHONEXE=... line below to point to your
+REM python executable. Double-quotes must go around the
+REM entire statement. ex: set "PYTHONEXE=C:\python26\python.exe"
+REM
+REM Modify GIMPEXE and BLENDEREXE to point to GIMP and Blender
+REM executables in a similar fashoin.
+REM
+REM Modify MODEXPORTER_OUTPUTROOT to point to the desired output
+REM drive path.
+REM
+REM =============================================================
+
+set "PYTHONEXE=C:\Python26\python.exe"
+set "GIMPEXE=C:\Program Files\GIMP 2\bin\gimp-console-2.8.exe"
+set "BLENDEREXE=C:\Blender\blender.exe"
+set "MODEXPORTER_OUTPUTROOT=C:"
+
+echo.
+echo ModExporter Settings Loaded:
+echo Using Python path: %PYTHONEXE%
+echo Using GIMP path: %GIMPEXE%
+echo Using Blender path: %BLENDEREXE%
+echo ModExporter Output folder: %MODEXPORTER_OUTPUTROOT%
