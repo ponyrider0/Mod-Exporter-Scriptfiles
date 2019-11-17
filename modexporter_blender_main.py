@@ -360,20 +360,15 @@ def print_jobs_info():
     global num_jobs
     global num_locks
     print "--------------------------------"
-    print ""
     print "Total available jobs found = " + str(num_jobs-num_locks)
-    print "Press ENTER to start processing jobs."
-    print ""
     print "--------------------------------"
-    raw_input("")
+#    raw_input("")
 
 def print_jobs_complete_quit():
     print "--------------------------------"
-    print ""
-    print "Jobs completed. Press ENTER to exit script."
-    print ""
+    print "Jobs completed."
     print "--------------------------------"
-    raw_input("")
+#    raw_input("")
     quit()
 
 # main
