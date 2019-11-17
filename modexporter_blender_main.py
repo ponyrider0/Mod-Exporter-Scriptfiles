@@ -19,7 +19,7 @@ import pyffi.spells.nif
 if (os.environ.get("BLENDEREXE") is not None):
     blenderPath = os.environ["BLENDEREXE"]
 else:
-    blenderPath = "C:/Program Files (x86)/Blender Foundation/Blender/blender.exe"
+    blenderPath = "C:/Blender/blender.exe"
 
 #print "==============DEBUG=============="
 #print ""
