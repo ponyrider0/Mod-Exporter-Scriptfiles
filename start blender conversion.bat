@@ -1,14 +1,12 @@
 @echo off
-REM =============================================================
-REM Modify the set PYTHONEXE=... line below to point to your
-REM python executable. Double-quotes must go around the
-REM entire statement. ex: set "PYTHONEXE=C:\python26\python.exe"
-REM
-REM =============================================================
 
-set "MODEXPORTER_OUTPUTROOT=C:"
+if exist "settings.bat" goto load_settings
+echo Creating "settings.bat" file...
+copy "settings.template" "settings.bat"
 
-set "PYTHONEXE=C:\Python26\python.exe"
-set "BLENDEREXE=C:\Blender\blender.exe"
+:load_settings
+call settings.bat
 
 "%PYTHONEXE%" modexporter_blender_main.py
+
+pause

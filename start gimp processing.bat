@@ -1,7 +1,12 @@
 @echo off
-set "MODEXPORTER_OUTPUTROOT=C:"
 
-set "PYTHONEXE=C:\Python26\python.exe"
-set "GIMPEXE=C:\Program Files\GIMP 2\bin\gimp-console-2.8.exe"
+if exist "settings.bat" goto load_settings
+echo Creating "settings.bat" file...
+copy "settings.template" "settings.bat"
+
+:load_settings
+call settings.bat
 
 "%PYTHONEXE%" modexporter_gimp_main.py
+
+pause
