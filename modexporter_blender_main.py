@@ -15,10 +15,20 @@ import pyffi.spells.nif.fix
 import pyffi.spells.nif.optimize
 import pyffi.spells.nif
 
+
 if (os.environ.get("BLENDEREXE") is not None):
     blenderPath = os.environ["BLENDEREXE"]
 else:
     blenderPath = "C:/Program Files (x86)/Blender Foundation/Blender/blender.exe"
+
+print "==============DEBUG=============="
+print ""
+print "DEBUG: BLENDEREXE = " + os.environ["BLENDEREXE"]
+print "DEBUG: BLENDERPATH = " + blenderPath
+print ""
+print "==============DEBUG=============="
+raw_input("Press ENTER to continue.")
+
 if os.path.exists(blenderPath) == False:
 	print "==================="
 	print "ERROR: Blender was not found. Please set the BLENDEREXE variable to the path of your blender executable."
