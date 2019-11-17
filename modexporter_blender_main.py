@@ -21,13 +21,13 @@ if (os.environ.get("BLENDEREXE") is not None):
 else:
     blenderPath = "C:/Program Files (x86)/Blender Foundation/Blender/blender.exe"
 
-print "==============DEBUG=============="
-print ""
-print "DEBUG: BLENDEREXE = " + os.environ["BLENDEREXE"]
-print "DEBUG: BLENDERPATH = " + blenderPath
-print ""
-print "==============DEBUG=============="
-raw_input("Press ENTER to continue.")
+'print "==============DEBUG=============="
+'print ""
+'print "DEBUG: BLENDEREXE = " + os.environ["BLENDEREXE"]
+'print "DEBUG: BLENDERPATH = " + blenderPath
+'print ""
+'print "==============DEBUG=============="
+'raw_input("Press ENTER to continue.")
 
 if os.path.exists(blenderPath) == False:
 	print "==================="
