@@ -3,6 +3,7 @@ import os
 import os.path
 import multiprocessing
 import subprocess
+import Queue
 import time
 import glob
 
@@ -53,6 +54,17 @@ fullres_collisions = True
 
 nifConvPath = "NIF_Conv.exe"
 
+
+def error_list(err_string):
+    print(err_string)
+    writemode = 'a'
+    if not os.path.exists(error_filename):
+        writemode = 'w'
+    with open(error_filename, writemode) as error_file:
+#    with open(error_filename, "a") as error_file:
+        error_file.write(err_string + "\n")
+
+
 class SpellDelMaterialProperties(pyffi.spells.nif.modify._SpellDelBranchClasses):
     BRANCH_CLASSES_TO_BE_DELETED = (NifFormat.NiMaterialProperty,)
     SPELLNAME = "delmaterialprop"
@@ -96,8 +108,8 @@ def postprocessNif(filename):
         # nif-read error, something wrong with NIF, delete...
         input_stream.close()
         os.remove(filename)
-        s = "\n\nERROR reading(" + filename + "); deleting file."
-        print(s)
+        s = "\n\npostprocessNif(): ERROR reading(" + filename + "); deleting file."
+#        print(s)
         error_list(s)
         return -1
     input_stream.close()
@@ -109,14 +121,10 @@ def postprocessNif(filename):
         print "PostProcessing(" + filename + ") complete."
     except Exception as e:
         s = "\n\nERROR post-processing(" + filename + ")..."
-        print(s)
+#        print(s)
         error_list(s)
     return 0
 
-
-def error_list(err_string):
-    with open(error_filename, "a") as error_file:
-        error_file.write(err_string + "\n")
 
 def select_job_file():
     global jobname
@@ -174,7 +182,7 @@ def select_job_file():
 
 
 
-def perform_job_new_clothing(filename_args):
+def jobthread_clothing(filename_args):
     global fullres_collisions
     global blenderPath
 
@@ -199,10 +207,17 @@ def perform_job_new_clothing(filename_args):
             # log error and continue
             error_list(filename + " (launch error) could not start blender.")
             return -1
-    rc = postprocessNif(output+filename)
+
+    if os.path.exists(output_path+filename):
+        rc = postprocessNif(output_path+filename)
+    else:
+        rc = -1
+        error_list("ERROR: blender_clothing script failed to produce output: " + output_path + filename)
+#    rc = postprocessNif(output_path+filename)
     return rc
 
-def perform_job_new_generic(filename_args):
+
+def jobthread_generic(filename_args):
     global fullres_collisions
     global blenderPath
 
@@ -233,79 +248,112 @@ def perform_job_new_generic(filename_args):
         nifCall.append("-d")
         nifCall.append(filename.replace("/", "\\"))
         # attempt #1
+        commandLineString = ""
+        for s in nifCall:
+            commandLineString = commandLineString + s + " "
+        error_list("DEBUG: attempt#1, (" + filename + ") attempting to launch NIF_conv.exe...\ncommand=" + commandLineString)
         rc = subprocess.call(nifCall)
         if os.path.exists(output_path+filename):
             rc = postprocessNif(output_path+filename)
         else:
             rc = -1
+            error_list("ERROR: NIF_Conv.exe failed to produce output: " + output_path + filename)
     if (rc != 0):
         if ("_far.nif" in filename):
             return -1
         else:
+            blenderCall = [blenderPath, blenderFilename, "-b", "-p", "0", "0", "1", "1", "-P", conversion_script, "--", output_path+filename,"--fullres_collisions", str(int(fullres_collisions))]
+            commandLineString = ""
+            for s in blenderCall:
+                commandLineString = commandLineString + s + " "
+            error_list("DEBUG: attempt#2, (" + filename + ") attempting to launch Blender fallback...\ncommand=" + commandLineString)
             # attempt #2
-            rc = subprocess.call([blenderPath, blenderFilename, "-b", "-p", "0", "0", "1", "1", "-P", conversion_script, "--", output_path+filename,"--fullres_collisions", str(int(fullres_collisions))])
+            rc = subprocess.call(blenderCall)
         if (rc != 0):
             if ("_far.nif" in filename):
                 return -1
             else:
+                blenderCall = [blenderPath, blenderFilename, "-b", "-p", "0", "0", "1", "1", "-P", conversion_script, "--", output_path+filename,"--fullres_collisions", str(int(fullres_collisions))]
+                commandLineString = ""
+                for s in blenderCall:
+                    commandLineString = commandLineString + s + " "
+                error_list("DEBUG: attempt#3, (" + filename + ") attempting to launch Blender fallback...\ncommand=" + commandLineString)
                 #attempt #3
-                rc = subprocess.call([blenderPath, blenderFilename, "-b", "-p", "0", "0", "1", "1", "-P", conversion_script, "--", output_path+filename,"--fullres_collisions", str(int(fullres_collisions))])
+                rc = subprocess.call(blenderCall)
             if (rc != 0):
                 # log error and continue
                 error_list(filename + " (launch error) could not start blender.")
                 return -1
-        rc = postprocessNif(output_path+filename)
+        if os.path.exists(output_path+filename):
+            rc = postprocessNif(output_path+filename)
+        else:
+            rc = -1
+            error_list("ERROR: blender fallback script failed to produce output: " + output_path + filename)
+#        rc = postprocessNif(output_path+filename)
     return rc
 
-def perform_job_new(jobname):
+
+def jobthread_clothing_safe(args):
+    filename_args, mqueue = args[0], args[1]
+    try:
+        jobthread_clothing(filename_args)
+    except Exception as e:
+        mqueue.put(e)
+
+def jobthread_generic_safe(args):
+    filename_args, mqueue = args[0], args[1]
+    try:
+        jobthread_generic(filename_args)
+    except Exception as e:
+        mqueue.put(e)
+
+
+def spawn_job_threads(jobname):
     global CPU_COUNT
     global input_files
     if (len(input_files) == 0):
         return 0
     #print "CPUS=[" + str(CPU_COUNT) + "]"
     #raw_input("JOB SIZE=[" + str(len(input_files)) + "]  PRESS ENTER TO CONTINUE")
+    manager = multiprocessing.Manager()
+    mqueue = manager.Queue()
     pool = multiprocessing.Pool(processes=CPU_COUNT)
 #    pool = multiprocessing.Pool(processes=1)
     if ("_clothing_" in jobname):
-        result = pool.map_async(perform_job_new_clothing, input_files)
+        map_async_result = pool.map_async(jobthread_clothing_safe, [(x, mqueue) for x in input_files])
     else:
-        result = pool.map_async(perform_job_new_generic, input_files)
+        map_async_result = pool.map_async(jobthread_generic_safe, [(x, mqueue) for x in input_files])
+
+##    # non-blocking job processing
+##    while not map_async_result.ready() or mqueue.qsize() > 0:
+##        try:
+##            mqueue_result = mqueue.get_nowait()
+##        except Queue.Empty:
+##            time.sleep(1)
+##            continue
+##        if isinstance(mqueue_result, Exception):
+##            raise mqueue_result
+
+    # block until all jobs processed
     try:
-        result.wait(timeout=99999999)
+        map_async_result.wait(timeout=99999999)
         pool.close()
         pool.join()
     except KeyboardInterrupt:
-        quit(-1)
+        print "Keyboard interrupt detected."
+#        quit(-1)
+
+    # complete processing any remaining mqueue results
+    while True:
+        try:
+            mqueue_result = mqueue.get_nowait()
+        except Queue.Empty:
+            break
+        if isinstance(mqueue_result, Exception):
+            raise mqueue_result
+        
     return 0
 
-##def perform_job_old():
-##    global jobname
-##    global input_files
-##    global fullres_collisions
-##    global blenderPath
-##    for in_file in input_files:
-##        if ("_clothing_" in jobname) and ("ugnd.nif" not in in_file.lower()):
-##            conversion_script = "modexporter_blender_clothing.py"
-##        else:
-##            conversion_script = "modexporter_blender_generic.py"
-##        ## LOAD BLENDER HERE....
-##        print "==================="
-##        print "starting blender..." + in_file
-##        print "==================="
-##        #raw_input("DEBUG: PRESS ENTER TO BEGIN")
-##        if ("_far.nif" in in_file):
-##            rc = subprocess.call([blenderPath, blenderFilename, "-p", "0", "0", "1", "1", "-P", conversion_script, "--", in_file,"--fullres_collisions", str(int(fullres_collisions))])
-##        else:
-##            rc = subprocess.call([blenderPath, blenderFilename, "-b", "-p", "0", "0", "1", "1", "-P", conversion_script, "--", in_file,"--fullres_collisions", str(int(fullres_collisions))])
-##        if (rc != 0):
-##            print "Error launching blender: retrying with gui enabled..."
-##            #raw_input("Press Enter to continue.")
-##            rc = subprocess.call([blenderPath, blenderFilename, "-p", "0", "0", "1", "1", "-P", conversion_script, "--", in_file,"--fullres_collisions", str(int(fullres_collisions))])
-##            if (rc != 0):
-##                print "Unable to launch blender, logging error and skipping file..."
-##                # log error and continue
-##                error_list(in_file + " (launch error) could not start blender.")
-##                return -1
 
             
 def complete_job():
@@ -330,7 +378,7 @@ def process_next_job():
     jobname = ""
     if (select_job_file() == -1):
         return 0
-    if (perform_job_new(jobname) == -1):
+    if (spawn_job_threads(jobname) == -1):
         print "DEBUG: error occured while processing job. Please see Oblivion.output\error_list.txt for more information."
         raw_input("Press ENTER to try to continue with next file or CTRL+C to quit.")
         return -1
